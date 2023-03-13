@@ -63,13 +63,13 @@ test('snapshot - defaults', () => {
   expect(container).toMatchSnapshot();
 });
 
-test('instanceId prop > to have instanceId as id prefix for the select components', () => {
+test('instanceId prop > to have instanceId as id prefix for the select components, except options components', () => {
   let { container } = render(
     <Select {...BASIC_PROPS} menuIsOpen instanceId={'custom-id'} />
   );
   expect(container.querySelector('input')!.id).toContain('custom-id');
-  container.querySelectorAll('div.react-select__option').forEach((opt) => {
-    expect(opt.id).toContain('custom-id');
+  container.querySelectorAll('div.react-select__option').forEach((opt, index) => {
+    expect(opt.id).toContain(`${OPTIONS[index].value}-option-${index}`);
   });
 });
 
@@ -1968,21 +1968,16 @@ cases(
       container
         .querySelector('input.react-select__input')!
         .getAttribute('aria-activedescendant')
-    ).toBe('1');
+    ).toBe('zero-option-0');
   },
   {
-    'single select > should update aria-activedescendant as per focused option':
-      {
-        skip: true,
+    'single select > should update aria-activedescendant as per focused option': {},
+    'multi select > should update aria-activedescendant as per focused option': {
+      props: {
+        ...BASIC_PROPS,
+        value: { label: '2', value: 'two' },
       },
-    'multi select > should update aria-activedescendant as per focused option':
-      {
-        skip: true,
-        props: {
-          ...BASIC_PROPS,
-          value: { label: '2', value: 'two' },
-        },
-      },
+    },
   }
 );
 
