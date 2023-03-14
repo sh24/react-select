@@ -1093,6 +1093,15 @@ export default class Select<
   getOptionValue = (data: Option): string => {
     return getOptionValue(this.props, data);
   };
+  getOptionId = (data: Option | null): string | undefined => {
+    return this.getCategorizedOptions().map((option) => {
+      if (option.type === 'group') {
+        return option.options.map((innerOption) => innerOption);
+      } else {
+        return option;
+      }
+    }).flat().find((option) => option.data === data)?.id;
+  };
   getStyles = <Key extends keyof StylesProps<Option, IsMulti, Group>>(
     key: Key,
     props: StylesProps<Option, IsMulti, Group>[Key]
@@ -1615,13 +1624,7 @@ export default class Select<
 
     const id = inputId || this.getElementId('input');
 
-    const focusedOptionId = this.getCategorizedOptions().map((option) => {
-      if (option.type === 'group') {
-        return option.options.map((innerOption) => innerOption);
-      } else {
-        return option;
-      }
-    }).flat().find((option) => option.data === focusedOption)?.id;
+    const focusedOptionId = this.getOptionId(focusedOption);
 
     // aria attributes makes the JSX "noisy", separated for clarity
     const ariaAttributes = {
