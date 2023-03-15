@@ -338,6 +338,7 @@ interface State<
 }
 
 interface CategorizedOption<Option> {
+  id: string;
   type: 'option';
   data: Option;
   isDisabled: boolean;
@@ -374,6 +375,7 @@ function toCategorizedOption<
   const value = getOptionValue(props, option);
 
   return {
+    id: `${value}-option-${index}`,
     type: 'option',
     data: option,
     isDisabled,
@@ -1091,6 +1093,15 @@ export default class Select<
   getOptionValue = (data: Option): string => {
     return getOptionValue(this.props, data);
   };
+  getOptionId = (data: Option | null): string | undefined => {
+    return this.getCategorizedOptions().map((option) => {
+      if (option.type === 'group') {
+        return option.options.map((innerOption) => innerOption);
+      } else {
+        return option;
+      }
+    }).flat().find((option) => option.data === data)?.id;
+  };
   getStyles = <Key extends keyof StylesProps<Option, IsMulti, Group>>(
     key: Key,
     props: StylesProps<Option, IsMulti, Group>[Key]
@@ -1608,10 +1619,12 @@ export default class Select<
       required,
     } = this.props;
     const { Input } = this.getComponents();
-    const { inputIsHidden, ariaSelection } = this.state;
+    const { inputIsHidden, ariaSelection, focusedOption } = this.state;
     const { commonProps } = this;
 
     const id = inputId || this.getElementId('input');
+
+    const focusedOptionId = this.getOptionId(focusedOption);
 
     // aria attributes makes the JSX "noisy", separated for clarity
     const ariaAttributes = {
@@ -1627,6 +1640,7 @@ export default class Select<
       ...(menuIsOpen && {
         'aria-controls': this.getElementId('listbox'),
         'aria-owns': this.getElementId('listbox'),
+        'aria-activedescendant': focusedOptionId,
       }),
       ...(!isSearchable && {
         'aria-readonly': true,
@@ -1879,14 +1893,14 @@ export default class Select<
     if (!menuIsOpen) return null;
 
     // TODO: Internal Option Type here
-    const render = (props: CategorizedOption<Option>, id: string) => {
-      const { type, data, isDisabled, isSelected, label, value } = props;
+    const render = (props: CategorizedOption<Option>, key: string) => {
+      const { id, type, data, isDisabled, isSelected, label, value } = props;
       const isFocused = focusedOption === data;
       const onHover = isDisabled ? undefined : () => this.onOptionHover(data);
       const onSelect = isDisabled ? undefined : () => this.selectOption(data);
-      const optionId = `${this.getElementId('option')}-${id}`;
+      const optionKey = `${this.getElementId('option')}-${key}`;
       const innerProps = {
-        id: optionId,
+        id,
         onClick: onSelect,
         onMouseMove: onHover,
         onMouseOver: onHover,
@@ -1900,7 +1914,7 @@ export default class Select<
           data={data}
           isDisabled={isDisabled}
           isSelected={isSelected}
-          key={optionId}
+          key={optionKey}
           label={label}
           type={type}
           value={value}
